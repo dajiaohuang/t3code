@@ -104,7 +104,8 @@ export function foldLatinDiacritics(text: string): string {
 }
 
 export function newProjectFolderName(name: string): string {
-  const slug = foldLatinDiacritics(name)
+  // The apostrophe in ŉ's fold is part of the letter, not a word separator.
+  const slug = foldLatinDiacritics(name.replaceAll("ŉ", "n"))
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+/, "")
