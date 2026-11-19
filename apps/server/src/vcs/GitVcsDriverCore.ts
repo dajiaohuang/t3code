@@ -500,6 +500,7 @@ function gitCommandContext(
 
 // Stderr can echo credentials from argv/URLs; classify fixed patterns without exposing matched text.
 const GIT_FAILURE_REASON_PATTERNS: ReadonlyArray<readonly [RegExp, GitCommandFailureReason]> = [
+  [/no space left on device/i, "disk_full"],
   [/would clobber existing tag/i, "tag_would_be_clobbered"],
   [/is already (?:used by worktree at|checked out at)/i, "branch_checked_out_in_worktree"],
   [/a branch named .+ already exists/i, "branch_already_exists"],
@@ -537,6 +538,7 @@ const GIT_FAILURE_REASON_PATTERNS: ReadonlyArray<readonly [RegExp, GitCommandFai
 
 // Reasons the user can act on get a sentence in place of the generic detail.
 const GIT_FAILURE_REASON_DETAILS: Partial<Record<GitCommandFailureReason, string>> = {
+  disk_full: "No space left on device. Free space on the affected filesystem and retry.",
   push_rejected_by_remote:
     "The remote rejected the push. Push this branch from a terminal to see the server's message.",
   push_rejected_non_fast_forward:
@@ -1273,7 +1275,10 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
           new GitCommandError({
             ...gitCommandContext({ operation, cwd, args }),
             ...(reason === null ? {} : { reason }),
-            detail: options.fallbackErrorDetail ?? gitFailureDetail(reason),
+            detail:
+              reason === "disk_full"
+                ? gitFailureDetail(reason)
+                : (options.fallbackErrorDetail ?? gitFailureDetail(reason)),
             ...(result.exitCode === null ? {} : { exitCode: result.exitCode }),
             stdoutLength: result.stdout.length,
             stderrLength: result.stderr.length,

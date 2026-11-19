@@ -2630,6 +2630,32 @@ it.layer(layerTest)("GitVcsDriver core integration", (it) => {
       }),
     );
 
+    it.effect("reports a disk-full diagnostic from a real git worktree failure", () =>
+      Effect.gen(function* () {
+        const cwd = yield* makeTmpDir();
+        const { initialBranch } = yield* initRepoWithCommit(cwd);
+        const path = yield* Path.Path;
+        const fs = yield* FileSystem.FileSystem;
+        yield* writeTextFile(
+          cwd,
+          ".git/hooks/post-checkout",
+          "#!/bin/sh\necho 'fatal: cannot write private-secret: No space left on device' >&2\nexit 1\n",
+        );
+        yield* fs.chmod(path.join(cwd, ".git/hooks/post-checkout"), 0o755);
+        const driver = yield* GitVcsDriver.GitVcsDriver;
+        const error = yield* driver
+          .createWorktree({
+            cwd,
+            refName: initialBranch,
+            newRefName: "test/disk-full",
+            path: path.join(cwd, "worktree"),
+          })
+          .pipe(Effect.flip);
+        assert.include(error.message, "No space left on device");
+        assert.notInclude(yield* encodeGitCommandError(error), "private-secret");
+      }),
+    );
+
     it.effect.each([
       { action: "worktree add", detail: "git worktree add failed" },
       { action: "worktree add -b", detail: "git branch failed" },
