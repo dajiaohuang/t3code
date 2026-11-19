@@ -515,48 +515,61 @@ function PullRequestBadge({
 export function ThreadPullRequestsMiniList({
   pullRequests,
   onOpenPullRequest,
+  limit,
 }: {
   pullRequests: ReadonlyArray<ThreadPullRequestLink>;
   onOpenPullRequest?: (event: MouseEvent<HTMLAnchorElement>, url: string) => void;
+  limit?: number;
 }) {
+  const gt = useGT();
   const lines = pipe(
     visibleThreadPullRequests(pullRequests),
     resolveThreadPullRequestChains,
     pullRequestListLines,
   );
   if (lines.length === 0) return null;
+  const remaining = limit === undefined ? 0 : Math.max(0, lines.length - limit);
   return (
-    <ul className="flex flex-col gap-1">
-      {lines.map((line) => {
-        const snapshot = line.link.snapshot;
-        const presentation =
-          snapshot === null
-            ? null
-            : resolvePullRequestState({ state: snapshot.state, isDraft: snapshot.isDraft });
-        return (
-          <ThreadPullRequestMiniListItem
-            key={`${line.link.host}/${line.link.repository}#${line.link.number}`}
-            number={line.link.number}
-            url={line.link.url}
-            title={snapshot?.title ?? line.link.repository}
-            presentation={presentation}
-            depth={line.depth}
-            onOpenPullRequest={onOpenPullRequest}
-          >
-            {line.stack ? (
-              <span className="ml-auto shrink-0 pl-1 text-3xs">
-                {line.stack.kind === "native" ? (
-                  <T context="a native stack of pull requests">stack</T>
-                ) : (
-                  <T context="a chain of pull requests based on each other">chain</T>
-                )}{" "}
-                · {line.stack.size}
-              </span>
-            ) : null}
-          </ThreadPullRequestMiniListItem>
-        );
-      })}
-    </ul>
+    <>
+      <ul className="flex flex-col gap-1">
+        {(limit === undefined ? lines : lines.slice(0, limit)).map((line) => {
+          const snapshot = line.link.snapshot;
+          const presentation =
+            snapshot === null
+              ? null
+              : resolvePullRequestState({ state: snapshot.state, isDraft: snapshot.isDraft });
+          return (
+            <ThreadPullRequestMiniListItem
+              key={`${line.link.host}/${line.link.repository}#${line.link.number}`}
+              number={line.link.number}
+              url={line.link.url}
+              title={snapshot?.title ?? line.link.repository}
+              presentation={presentation}
+              depth={line.depth}
+              onOpenPullRequest={onOpenPullRequest}
+            >
+              {line.stack ? (
+                <span className="ml-auto shrink-0 pl-1 text-3xs">
+                  {line.stack.kind === "native" ? (
+                    <T context="a native stack of pull requests">stack</T>
+                  ) : (
+                    <T context="a chain of pull requests based on each other">chain</T>
+                  )}{" "}
+                  · {line.stack.size}
+                </span>
+              ) : null}
+            </ThreadPullRequestMiniListItem>
+          );
+        })}
+      </ul>
+      {remaining > 0 ? (
+        <div className="pt-1">
+          {gt("{count, plural, one {+{count} more linked PR} other {+{count} more linked PRs}}", {
+            count: remaining,
+          })}
+        </div>
+      ) : null}
+    </>
   );
 }
 

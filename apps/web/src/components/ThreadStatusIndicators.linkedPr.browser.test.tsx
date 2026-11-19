@@ -4,9 +4,29 @@ import { expect, it, vi } from "vite-plus/test";
 import { render } from "../../test/render";
 import { AppAtomRegistryProvider } from "../rpc/atomRegistry";
 import { makeThreadFixture } from "../test-fixtures";
-import { ThreadRowLeadingStatus } from "./ThreadStatusIndicators";
+import { ThreadPullRequestsMiniList, ThreadRowLeadingStatus } from "./ThreadStatusIndicators";
 
 const environmentId = EnvironmentId.make("environment-test");
+
+it("bounds the hover preview while keeping the full PR list available", async () => {
+  const pullRequests: ThreadPullRequestLink[] = Array.from({ length: 20 }, (_, index) => ({
+    host: "github.com",
+    repository: "example/repo",
+    number: index + 1,
+    url: `https://github.com/example/repo/pull/${index + 1}`,
+    source: "manual",
+    linkedAt: "2026-01-01T00:00:00Z",
+    stack: null,
+    snapshot: null,
+  }));
+  await using screen = await render(
+    <ThreadPullRequestsMiniList pullRequests={pullRequests} limit={3} />,
+  );
+  await expect.element(screen.getByText("+17 more linked PRs")).toBeVisible();
+  expect(screen.container.querySelectorAll("li")).toHaveLength(3);
+  await screen.rerender(<ThreadPullRequestsMiniList pullRequests={pullRequests} />);
+  expect(screen.container.querySelectorAll("li")).toHaveLength(20);
+});
 
 vi.mock(import("../state/entities"), async (original) => ({
   ...(await original()),

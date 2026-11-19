@@ -298,7 +298,7 @@ function SidebarThreadTooltip({
         footer={
           supportsMultiplePullRequests && thread.pullRequests.length > 0 ? (
             <div className="border-t border-border/60 pt-2 pl-0.5 text-xs text-muted-foreground">
-              <ThreadPullRequestsMiniList pullRequests={thread.pullRequests} />
+              <ThreadPullRequestsMiniList pullRequests={thread.pullRequests} limit={3} />
             </div>
           ) : null
         }
