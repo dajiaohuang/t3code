@@ -76,6 +76,7 @@ test(
             ?.replace(/[A-Z]:\\[^()\n]*?\\demo/gi, "[test project]")
             .replace(/DESKTOP-[A-Z0-9]+/gi, "Scenario") ?? null;
       }
+      return null;
     });
     await app.screenshot("worktree-failure");
     await expect(
